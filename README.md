@@ -17,6 +17,7 @@ This full stack-app uses Cheerio and Mongoose to scrape data from another websit
 * Resources used:
     - https://getbootstrap.com
     - https://www.ign.com/
+    - https://www.heroku.com/
 
 
 
