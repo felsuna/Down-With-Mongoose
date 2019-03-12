@@ -37,7 +37,6 @@ app.get("/", (req, res) => {
 // Scraper to get information from ign website.
 app.get("/scrape", (req, res) => {
     axios.get("https://www.ign.com/articles?tags=news").then((response) => {
-
         const $ = cheerio.load(response.data)
         const articles = [];
         $(".listElmnt-blogItem").each(function (element) {
@@ -51,12 +50,22 @@ app.get("/scrape", (req, res) => {
             articles.push(article)
             // Add article to the mongo database.
             db.Article.create(article)
+                .then((dbArticle) => {
+                    console.log(dbArticle)
+                })
+                .catch(error => {
+                    res.send(error)
+                });
         })
+        // const dbObject = {
+        //     data: articles
+        // }
         res.send(articles)
-    
-        .catch(error => {
-            res.send(error)
-        });
+        res.send("Scrape complete");
+
+        res.render("index", {index: articles})
+
+
     });
 });
 
@@ -70,6 +79,33 @@ app.get('/articles', function (req, res) {
             res.json(error);
         });
 });
+
+// Route for grabbing a specific Article by id, populate it with it's note
+app.get("/articles/:id", (req, res) => {
+    db.Article.findOne({ _id: req.params.id })
+        .populate("note")
+        .then(dbArticle => {
+            res.json(dbArticle);
+        })
+        .catch(err => {
+            res.json(err);
+        });
+});
+
+// Route for saving/updating an Article's associated Note
+app.post("/articles/:id", (req, res) => {
+    db.Note.create(req.body)
+        .then(dbNote => {
+            return db.Article.findOneAndUpdate({ _id: req.params.id }, { note: dbNote._id }, { new: true });
+        })
+        .then(dbArticle => {
+            res.json(dbArticle);
+        })
+        .catch(err => {
+            res.json(err);
+        });
+});
+
 
 // Connect to the Mongo DB.
 // If deployed, use the deployed database (mlab for Heroku). Otherwise use the local mongoHeadlines database.
